@@ -29,22 +29,54 @@ DO NOT MODIFY
 @return boolean;
 */
 
-exports.isValidXML = xmlString => {
+const fastXmlParser = require('fast-xml-parser');
+
+const getDepth = obj => {
+  let depth = 1;
+  for (let key in obj) {
+    if (obj.hasOwnProperty(key) && typeof obj[key] === 'object') {
+      const dep = getDepth(obj[key]) + 1;
+      depth = Math.max(dep, depth);
+    }
+  }
+  return depth;
+};
+
+const checkedRules = obj => {
+  let result = false;
+  for (let key in obj) {
+    if (!obj.hasOwnProperty(key) || typeof obj[key] !== 'object') continue;
+    if (Array.isArray(obj[key])) {
+      result = true;
+    } else if (Object.keys(obj[key]).indexOf(key) !== -1) {
+      result = true;
+    } else {
+      checkedRules(obj[key]);
+    }
+  }
+  return result;
+};
+
+const isValidXML = xmlString => {
   if (xmlString.length === 0) {
     return false;
+  } else if (fastXmlParser.validate(xmlString) !== true) {
+    return false;
   }
-  let arr = xmlString.match(/<(.+?)>/gi);
-  let result = false;
-
-  arr.forEach(xml => {
-    if (!/^<\S>|^<\/\S>|^<\S\/>|^<\S \/>/.test(xml)) result = true
-  });
-  if (result) return false;
-
-  const newArr = arr.reduce((acc, cur) => {
-    const str = cur.replace(/[<|\/|>]/gi, '');
-    return [...acc, str]
-  }, []);
-  if (newArr.filter((item, pos) => newArr.indexOf(item) === pos).length > 2) return false;
+  // parsing result
+  // <a></a><b></b> 의 경우 {a: '', b: ''}
+  // <a></a><a></a> 의 경우 {a: ['', '']}
+  const parseObj = fastXmlParser.parse(xmlString);
+  if (getDepth(parseObj) > 2) {
+    return false;
+  } else if (checkedRules(parseObj)) {
+    return false;
+  }
   return true;
+};
+
+module.exports = {
+  getDepth,
+  checkedRules,
+  isValidXML
 };
