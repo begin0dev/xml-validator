@@ -35,8 +35,7 @@ const getDepth = obj => {
   let depth = 1;
   for (let key in obj) {
     if (obj.hasOwnProperty(key) && typeof obj[key] === 'object') {
-      const dep = getDepth(obj[key]) + 1;
-      depth = Math.max(dep, depth);
+      depth += getDepth(obj[key]);
     }
   }
   return depth;

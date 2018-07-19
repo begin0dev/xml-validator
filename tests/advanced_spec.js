@@ -12,6 +12,9 @@ describe("checked depth function test", () => {
   it("should be return data equal 2", () => {
     expect(getDepth({a: {b: ''}})).toEqual(2);
   });
+  it("should be return data equal 3", () => {
+    expect(getDepth({a: {b: {c: ''}}})).toEqual(3);
+  });
 });
 
 describe("checkedRules function test", () => {
