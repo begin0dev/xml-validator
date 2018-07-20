@@ -9,7 +9,8 @@
   "author": "Vingle",
   "dependencies": {
     "fast-xml-parser": "^3.11.1",
-    "jest": "^21.2.1"
+    "jest": "^21.2.1",
+    "xml-parser": "^1.2.1"
   },
   "jest": {
     "roots": [

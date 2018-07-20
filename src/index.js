@@ -29,46 +29,61 @@ DO NOT MODIFY
 @return boolean;
 */
 
+const parse = require('xml-parser');
 const fastXmlParser = require('fast-xml-parser');
 
 const getDepth = obj => {
+  if (obj.children.length === 0) return 0;
   let depth = 1;
-  for (let key in obj) {
-    if (obj.hasOwnProperty(key) && typeof obj[key] === 'object') {
-      depth += getDepth(obj[key]);
-    }
-  }
+  obj.children.forEach(child => {
+    if (child.children.length > 0) depth += getDepth(child);
+  });
   return depth;
 };
 
-const checkedRules = obj => {
+const checkedDuplicate = obj => {
+  const { name, children } = obj;
   let result = false;
-  for (let key in obj) {
-    if (!obj.hasOwnProperty(key) || typeof obj[key] !== 'object') continue;
-    if (Array.isArray(obj[key])) {
-      result = true;
-    } else if (Object.keys(obj[key]).indexOf(key) !== -1) {
-      result = true;
-    } else {
-      checkedRules(obj[key]);
+  if (children.length === 0) return false;
+  // children 의 name 과 비교 후 동일한 children 있는지 확인
+  if (children.filter(child => child.name === name).length > 0) return true;
+  // 동일 depth 에서 바로 앞에 위치한 name 과 비교 children 이 있는 경우 재귀로 다시 호출 확인
+  children.forEach((child, i) => {
+    if (i !== 0 && children[i - 1].name === child.name) result = true;
+    if (child.children.length > 0) {
+      result = result || checkedDuplicate(child)
     }
-  }
+  });
   return result;
 };
 
+// parsing result
+// {
+//   declaration: undefined,
+//   root: {
+//     name: 'ㄱ',
+//     attributes: {},
+//     children: [
+//       { name: 'a', attributes: {}, children: [], content: '' },
+//       { name: 'b', attributes: {}, children: [], content: '' },
+//       { name: 'a', attributes: {}, children: [], content: '' }
+//     ],
+//     content: ''
+//   }
+// }
 const isValidXML = xmlString => {
   if (xmlString.length === 0) {
     return false;
   } else if (fastXmlParser.validate(xmlString) !== true) {
     return false;
   }
-  // parsing result
-  // <a></a><b></b> 의 경우 {a: '', b: ''}
-  // <a></a><a></a> 의 경우 {a: ['', '']}
-  const parseObj = fastXmlParser.parse(xmlString);
-  if (getDepth(parseObj) > 2) {
+  // 임시 root tag 를 추가 한 뒤 파싱 - root object 에는 같은 depth 에도 처음 tag 하나만 root 로 나타남
+  xmlString = `<root>${xmlString}</root>`;
+  const { root } = parse(xmlString);
+
+  if (getDepth(root) > 2) {
     return false;
-  } else if (checkedRules(parseObj)) {
+  } else if (checkedDuplicate(root)) {
     return false;
   }
   return true;
@@ -76,6 +91,6 @@ const isValidXML = xmlString => {
 
 module.exports = {
   getDepth,
-  checkedRules,
+  checkedDuplicate,
   isValidXML
 };

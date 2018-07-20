@@ -1,33 +1,54 @@
 // TODO: Add tests that you find necessary.
+const { getDepth, checkedDuplicate } = require("../src");
 
-const { getDepth, checkedRules } = require("../src");
+// mock object
+const rootObj = {name: "root", children: []};
+const aObj = {name: "a", children: []};
+const bObj = {name: "b", children: []};
+const cObj = {name: "c", children: []};
 
-describe("checked depth function test", () => {
-  it("should be return data equal 1", () => {
-    expect(getDepth({a: ''})).toEqual(1);
+describe("getDepth function test", () => {
+  it('root into children length 0 return 0', () => {
+    const root = {...rootObj};
+    expect(getDepth(root)).toEqual(0);
   });
-  it("should be return data equal 1 where multi keys", () => {
-    expect(getDepth({a: '', b: ''})).toEqual(1);
+  it('root into children a return 1', () => {
+    const root = {...rootObj, children: [{...aObj}]};
+    expect(getDepth(root)).toEqual(1);
   });
-  it("should be return data equal 2", () => {
-    expect(getDepth({a: {b: ''}})).toEqual(2);
+  it('root into children a, b return depth equal 1', () => {
+    const root = {...rootObj, children: [{...aObj}, {...bObj}]};
+    expect(getDepth(root)).toEqual(1);
   });
-  it("should be return data equal 3", () => {
-    expect(getDepth({a: {b: {c: ''}}})).toEqual(3);
+  it('root into a and a into b return depth equal 2', () => {
+    const root = {...rootObj, children: [{...aObj, children: [{...bObj}]}]};
+    expect(getDepth(root)).toEqual(2);
+  });
+  it('root into a and a into b and b into c return depth equal 3', () => {
+    const root = {...rootObj, children: [{...aObj, children: [{...bObj, children: [{...cObj}]}]}]};
+    expect(getDepth(root)).toEqual(3);
   });
 });
 
-describe("checkedRules function test", () => {
-  it("depth 1, key 1, should be return data equal false", () => {
-    expect(checkedRules({a: ''})).toBeFalsy();
+describe("checkedDuplicate function test", () => {
+  it('root into a, a return true', () => {
+    const root = {...rootObj, children: [aObj, aObj]};
+    expect(checkedDuplicate(root)).toBeTruthy();
   });
-  it("depth 1, key 1, value is array, should be return data equal true", () => {
-    expect(checkedRules({a: []})).toBeTruthy();
+  it('root into a and a into b return false', () => {
+    const root = {...rootObj, children: [{...aObj, children: [{...bObj}]}]};
+    expect(checkedDuplicate(root)).toBeFalsy();
   });
-  it("depth 2, duplicate is not, should be return data equal false", () => {
-    expect(checkedRules({a: {b: ''}})).toBeFalsy();
+  it('root into a, b, a return false', () => {
+    const root = {...rootObj, children: [aObj, bObj, aObj]};
+    expect(checkedDuplicate(root)).toBeFalsy();
   });
-  it("depth 2, duplicate, should be return data equal false", () => {
-    expect(checkedRules({a: {a: ''}})).toBeTruthy();
+  it('root into a and a into b, b return true', () => {
+    const root = {...rootObj, children: [{...aObj, children: [bObj, bObj]}]};
+    expect(checkedDuplicate(root)).toBeTruthy();
+  });
+  it('root into a and a into a return true', () => {
+    const root = {...rootObj, children: [{...aObj, children: [aObj]}]};
+    expect(checkedDuplicate(root)).toBeTruthy();
   });
 });
